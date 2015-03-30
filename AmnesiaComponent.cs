@@ -36,11 +36,6 @@ namespace LiveSplit.Amnesia
             return null;
         }
 
-        public override void RenameComparison(string oldName, string newName)
-        {
-            
-        }
-
         public override void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
         {
             

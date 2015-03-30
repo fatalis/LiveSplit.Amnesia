@@ -76,10 +76,8 @@ namespace LiveSplit.Amnesia
             // commented out stuff is for the cracked version of the game (easier to debug when there's no copy protection)
 
             // overwrite unused alignment byte with and initialize as our "is loading" var
-            // this is [49EDC2] as seen below
-            //if (!p.WriteBytes(p.MainModule.BaseAddress + 0x9EDC2, 0))
-            //    return false;
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0x9DE12, 0))
+            // this is [419858] as seen below
+            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9858, 0))
                 return false;
 
             // the following patches are in Amnesia.cLuxMapHandler::CheckMapChange(afTimeStep)
@@ -88,28 +86,28 @@ namespace LiveSplit.Amnesia
             // overwrite useless code and set loading var to 1
             //
             // patch
-            // 0049EE93      C74424 64 00000000         MOV     DWORD PTR SS:[ESP+64], 0
+            // 00419984      837D E8 10                 CMP     DWORD PTR SS:[EBP-18], 10
+            // 00419988      C645 FC 00                 MOV     BYTE PTR SS:[EBP-4], 0
+            // 0041998C      72 0C                      JB      SHORT 0041999A
+
             // to
-            // 0049EE93      C605 C2ED4900 01           MOV     BYTE PTR DS:[49EDC2], 1
-            // 0049EE9A      90                         NOP
-            //if (!p.WriteBytes(p.MainModule.BaseAddress + 0x9EE93, 0xC6, 0x05, 0xC2, 0xED, 0x49, 0x00, 0x01, 0x90))
-            //    return false;
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0x9DEE3, 0xC6, 0x05, 0x12, 0xDE, 0x49, 0x00, 0x01, 0x90))
+            // 00419984      C605 58984100              MOV     BYTE PTR DS:[419858], 1
+            // 0041998B      90                         NOP
+            // 0041998C      EB 0C                      JMP     SHORT 0041999A
+            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9984, 0xC6, 0x05, 0x58, 0x98, 0x41, 0x00, 0x01, 0x90, 0xEB))
                 return false;
 
             // overwrite useless code and set loading var to 0
             //
             // patch
-            // 0049F061      C64424 70 04               MOV     BYTE PTR SS:[ESP+70], 4
-            // 0049F066      E8 9520F6FF                CALL    ProgLog
-            // to
-            // 0049F061      C605 C2ED4900 00           MOV     BYTE PTR DS:[49EDC2], 0
-            // 0049F068      90                         NOP
-            // 0049F069      90                         NOP
-            // 0049F06A      90                         NOP
-            //if (!p.WriteBytes(p.MainModule.BaseAddress + 0x9F062, 0x05, 0xC2, 0xED, 0x49, 0x00, 0x00, 0x90, 0x90, 0x90))
-            //    return false;
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0x9E0B2, 0x05, 0x12, 0xDE, 0x49, 0x00, 0x00, 0x90, 0x90, 0x90))
+            // 00419AF9      C645 FC 04                 MOV     BYTE PTR SS:[EBP-4], 4
+            // 00419AFD      E8 DE75F3FF                CALL    ProgLog
+                                                        
+            // to                                       
+            // 00419AF9      C605 58984100              MOV     BYTE PTR DS:[419858], 0
+            // 00419B00      90                         NOP
+            // 00419B01      90                         NOP
+            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9AFA, 0x05, 0x58, 0x98, 0x41, 0x00, 0x00, 0x90, 0x90))
                 return false;
 
             return true;
@@ -122,8 +120,7 @@ namespace LiveSplit.Amnesia
             while (!game.HasExited && !cts.IsCancellationRequested)
             {
                 bool isLoading;
-                //game.ReadBool(game.MainModule.BaseAddress + 0x9EDC2, out isLoading);
-                game.ReadBool(game.MainModule.BaseAddress + 0x9DE12, out isLoading);
+                game.ReadBool(game.MainModule.BaseAddress + 0xC9858, out isLoading);
 
                 if (isLoading != prevIsLoading)
                 {
