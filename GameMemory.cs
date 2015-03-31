@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -14,6 +15,8 @@ namespace LiveSplit.Amnesia
         private Task _thread;
         private SynchronizationContext _uiThread;
         private CancellationTokenSource _cancelSource;
+
+        const int UNUSED_BYTE_OFFSET = 0xC9858;
 
         public void StartReading()
         {
@@ -72,12 +75,14 @@ namespace LiveSplit.Amnesia
             if (p == null || p.HasExited)
                 return false;
 
+            byte[] addrBytes = BitConverter.GetBytes((uint)p.MainModule.BaseAddress + UNUSED_BYTE_OFFSET);
+
             // the following code has a very small chance to crash the game due to not suspending threads while writing memory
             // commented out stuff is for the cracked version of the game (easier to debug when there's no copy protection)
 
             // overwrite unused alignment byte with and initialize as our "is loading" var
             // this is [419858] as seen below
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9858, 0))
+            if (!p.WriteBytes(p.MainModule.BaseAddress + UNUSED_BYTE_OFFSET, 0))
                 return false;
 
             // the following patches are in Amnesia.cLuxMapHandler::CheckMapChange(afTimeStep)
@@ -94,7 +99,10 @@ namespace LiveSplit.Amnesia
             // 00419984      C605 58984100              MOV     BYTE PTR DS:[419858], 1
             // 0041998B      90                         NOP
             // 0041998C      EB 0C                      JMP     SHORT 0041999A
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9984, 0xC6, 0x05, 0x58, 0x98, 0x41, 0x00, 0x01, 0x90, 0xEB))
+            var payload1 = new List<byte>(new byte[] { 0xC6, 0x05 });
+            payload1.AddRange(addrBytes);
+            payload1.AddRange(new byte[] { 0x01, 0x90, 0xEB });
+            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9984, payload1.ToArray()))
                 return false;
 
             // overwrite useless code and set loading var to 0
@@ -107,7 +115,10 @@ namespace LiveSplit.Amnesia
             // 00419AF9      C605 58984100              MOV     BYTE PTR DS:[419858], 0
             // 00419B00      90                         NOP
             // 00419B01      90                         NOP
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9AFA, 0x05, 0x58, 0x98, 0x41, 0x00, 0x00, 0x90, 0x90))
+            var payload2 = new List<byte>(new byte[] { 0x05 });
+            payload2.AddRange(addrBytes);
+            payload2.AddRange(new byte[] { 0x00, 0x90, 0x90 });
+            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9AFA, payload2.ToArray()))
                 return false;
 
             return true;
@@ -120,7 +131,7 @@ namespace LiveSplit.Amnesia
             while (!game.HasExited && !cts.IsCancellationRequested)
             {
                 bool isLoading;
-                game.ReadBool(game.MainModule.BaseAddress + 0xC9858, out isLoading);
+                game.ReadBool(game.MainModule.BaseAddress + UNUSED_BYTE_OFFSET, out isLoading);
 
                 if (isLoading != prevIsLoading)
                 {
