@@ -8,6 +8,8 @@ namespace LiveSplit.Amnesia
 {
     class AmnesiaComponent : LogicComponent
     {
+        public override string ComponentName => "Amnesia";
+
         private GameMemory _gameMemory;
         private TimerModel _timer;
 
@@ -23,8 +25,7 @@ namespace LiveSplit.Amnesia
 
         public override void Dispose()
         {
-            if (_gameMemory != null)
-                _gameMemory.Stop();
+            _gameMemory?.Stop();
         }
 
         void gameMemory_OnLoadingChanged(object sender, LoadingChangedEventArgs e)
@@ -42,10 +43,6 @@ namespace LiveSplit.Amnesia
             
         }
 
-        public override string ComponentName
-        {
-            get { return "Amnesia"; }
-        }
 
         public override void SetSettings(XmlNode settings)
         {

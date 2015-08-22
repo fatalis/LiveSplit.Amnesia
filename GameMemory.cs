@@ -136,10 +136,7 @@ namespace LiveSplit.Amnesia
 
                 if (isLoading != prevIsLoading)
                 {
-                    _uiThread.Post(d => {
-                        if (this.OnLoadingChanged != null)
-                            this.OnLoadingChanged(this, new LoadingChangedEventArgs(isLoading));
-                    }, null);
+                    _uiThread.Post(d => this.OnLoadingChanged?.Invoke(this, new LoadingChangedEventArgs(isLoading)), null);
                 }
 
                 prevIsLoading = isLoading;
