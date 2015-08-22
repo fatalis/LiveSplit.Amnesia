@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using LiveSplit.ComponentUtil;
 
 namespace LiveSplit.Amnesia
 {
@@ -75,14 +76,14 @@ namespace LiveSplit.Amnesia
             if (p == null || p.HasExited)
                 return false;
 
-            byte[] addrBytes = BitConverter.GetBytes((uint)p.MainModule.BaseAddress + UNUSED_BYTE_OFFSET);
+            byte[] addrBytes = BitConverter.GetBytes((uint)p.MainModuleWow64Safe().BaseAddress + UNUSED_BYTE_OFFSET);
 
             // the following code has a very small chance to crash the game due to not suspending threads while writing memory
             // commented out stuff is for the cracked version of the game (easier to debug when there's no copy protection)
 
             // overwrite unused alignment byte with and initialize as our "is loading" var
             // this is [419858] as seen below
-            if (!p.WriteBytes(p.MainModule.BaseAddress + UNUSED_BYTE_OFFSET, 0))
+            if (!p.WriteBytes(p.MainModuleWow64Safe().BaseAddress + UNUSED_BYTE_OFFSET, 0))
                 return false;
 
             // the following patches are in Amnesia.cLuxMapHandler::CheckMapChange(afTimeStep)
@@ -102,7 +103,7 @@ namespace LiveSplit.Amnesia
             var payload1 = new List<byte>(new byte[] { 0xC6, 0x05 });
             payload1.AddRange(addrBytes);
             payload1.AddRange(new byte[] { 0x01, 0x90, 0xEB });
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9984, payload1.ToArray()))
+            if (!p.WriteBytes(p.MainModuleWow64Safe().BaseAddress + 0xC9984, payload1.ToArray()))
                 return false;
 
             // overwrite useless code and set loading var to 0
@@ -118,7 +119,7 @@ namespace LiveSplit.Amnesia
             var payload2 = new List<byte>(new byte[] { 0x05 });
             payload2.AddRange(addrBytes);
             payload2.AddRange(new byte[] { 0x00, 0x90, 0x90 });
-            if (!p.WriteBytes(p.MainModule.BaseAddress + 0xC9AFA, payload2.ToArray()))
+            if (!p.WriteBytes(p.MainModuleWow64Safe().BaseAddress + 0xC9AFA, payload2.ToArray()))
                 return false;
 
             return true;
@@ -131,7 +132,7 @@ namespace LiveSplit.Amnesia
             while (!game.HasExited && !cts.IsCancellationRequested)
             {
                 bool isLoading;
-                game.ReadBool(game.MainModule.BaseAddress + UNUSED_BYTE_OFFSET, out isLoading);
+                game.ReadBool(game.MainModuleWow64Safe().BaseAddress + UNUSED_BYTE_OFFSET, out isLoading);
 
                 if (isLoading != prevIsLoading)
                 {

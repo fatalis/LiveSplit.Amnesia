@@ -9,11 +9,12 @@ namespace LiveSplit.Amnesia
     class AmnesiaComponent : LogicComponent
     {
         private GameMemory _gameMemory;
-        private LiveSplitState _state;
+        private TimerModel _timer;
 
         public AmnesiaComponent(LiveSplitState state)
         {
-            _state = state;
+            _timer = new TimerModel() { CurrentState = state };
+            _timer.OnStart += (sender, args) => _timer.InitializeGameTime();
 
             _gameMemory = new GameMemory();
             _gameMemory.OnLoadingChanged += gameMemory_OnLoadingChanged;
@@ -28,7 +29,7 @@ namespace LiveSplit.Amnesia
 
         void gameMemory_OnLoadingChanged(object sender, LoadingChangedEventArgs e)
         {
-            _state.IsGameTimePaused = e.IsLoading;
+            _timer.CurrentState.IsGameTimePaused = e.IsLoading;
         }
 
         public override Control GetSettingsControl(LayoutMode mode)
