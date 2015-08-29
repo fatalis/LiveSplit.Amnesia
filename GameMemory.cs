@@ -127,19 +127,15 @@ namespace LiveSplit.Amnesia
 
         void HandleProcess(Process game, CancellationTokenSource cts)
         {
-            bool prevIsLoading = false;
+            var isLoading = new MemoryWatcher<bool>(game.MainModuleWow64Safe().BaseAddress + UNUSED_BYTE_OFFSET);
 
             while (!game.HasExited && !cts.IsCancellationRequested)
             {
-                bool isLoading;
-                game.ReadBool(game.MainModuleWow64Safe().BaseAddress + UNUSED_BYTE_OFFSET, out isLoading);
-
-                if (isLoading != prevIsLoading)
+                if (isLoading.Update(game))
                 {
-                    _uiThread.Post(d => this.OnLoadingChanged?.Invoke(this, new LoadingChangedEventArgs(isLoading)), null);
+                    bool loading = isLoading.Current;
+                    _uiThread.Post(d => this.OnLoadingChanged?.Invoke(this, new LoadingChangedEventArgs(loading)), null);
                 }
-
-                prevIsLoading = isLoading;
 
                 Thread.Sleep(15);
             }

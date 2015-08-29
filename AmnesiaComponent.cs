@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.Windows.Forms;
 using System.Xml;
 using LiveSplit.Model;
 using LiveSplit.UI;
@@ -16,7 +17,7 @@ namespace LiveSplit.Amnesia
         public AmnesiaComponent(LiveSplitState state)
         {
             _timer = new TimerModel() { CurrentState = state };
-            _timer.OnStart += (sender, args) => _timer.InitializeGameTime();
+            _timer.OnStart += timer_OnStart;
 
             _gameMemory = new GameMemory();
             _gameMemory.OnLoadingChanged += gameMemory_OnLoadingChanged;
@@ -25,7 +26,13 @@ namespace LiveSplit.Amnesia
 
         public override void Dispose()
         {
+            _timer.OnStart -= timer_OnStart;
             _gameMemory?.Stop();
+        }
+
+        void timer_OnStart(object sender, EventArgs eventArgs)
+        {
+            _timer.InitializeGameTime();
         }
 
         void gameMemory_OnLoadingChanged(object sender, LoadingChangedEventArgs e)
