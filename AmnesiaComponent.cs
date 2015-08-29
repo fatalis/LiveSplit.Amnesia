@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Windows.Forms;
 using System.Xml;
 using LiveSplit.Model;
@@ -13,21 +14,36 @@ namespace LiveSplit.Amnesia
 
         private GameMemory _gameMemory;
         private TimerModel _timer;
+        private Timer _updateTimer;
 
         public AmnesiaComponent(LiveSplitState state)
         {
             _timer = new TimerModel() { CurrentState = state };
             _timer.OnStart += timer_OnStart;
 
+            _updateTimer = new Timer() { Interval = 15, Enabled = true };
+            _updateTimer.Tick += updateTimer_Tick;
+
             _gameMemory = new GameMemory();
             _gameMemory.OnLoadingChanged += gameMemory_OnLoadingChanged;
-            _gameMemory.StartReading();
+        }
+
+        private void updateTimer_Tick(object sender, EventArgs eventArgs)
+        {
+            try
+            {
+                _gameMemory.Update();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.ToString());
+            }
         }
 
         public override void Dispose()
         {
             _timer.OnStart -= timer_OnStart;
-            _gameMemory?.Stop();
+            _updateTimer?.Dispose();
         }
 
         void timer_OnStart(object sender, EventArgs eventArgs)
@@ -40,25 +56,9 @@ namespace LiveSplit.Amnesia
             _timer.CurrentState.IsGameTimePaused = e.IsLoading;
         }
 
-        public override Control GetSettingsControl(LayoutMode mode)
-        {
-            return null;
-        }
-
-        public override void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
-        {
-            
-        }
-
-
-        public override void SetSettings(XmlNode settings)
-        {
-           
-        }
-
-        public override XmlNode GetSettings(XmlDocument document)
-        {
-            return document.CreateElement("Settings");
-        }
+        public override Control GetSettingsControl(LayoutMode mode) { return null; }
+        public override void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode) { }
+        public override void SetSettings(XmlNode settings) { }
+        public override XmlNode GetSettings(XmlDocument document) { return document.CreateElement("Settings"); }
     }
 }
