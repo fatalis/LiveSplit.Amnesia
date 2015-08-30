@@ -12,7 +12,7 @@ Requirements
 ------------
 
   * Amnesia: The Dark Descent - Steam
-  * LiveSplit 1.4+
+  * LiveSplit 1.6+
   * .NET Framework 4
 
 Install
